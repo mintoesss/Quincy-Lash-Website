@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"> <!-- covers character and symbol so you can render - and $ -->
+    <title>Quincy Lash — Services</title>
+</head>
+<body>
+    <h1>Our Services</h1>
+
+    <ul> <!-- unordered list -->
+        {% for service in services %}
+            <li>
+                {{ service.name }} — ${{ service.price }}
+                ({{ service.duration_minutes }} min)
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
