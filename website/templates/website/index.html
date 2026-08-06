@@ -10,10 +10,79 @@
     <ul> <!-- unordered list -->
         {% for service in services %}
             <li>
-                {{ service.name }} — ${{ service.price }}
-                ({{ service.duration_minutes }} min)
+                {{ service.name }} — ${{ service.price }} ({{ service.duration_minutes }} min)
             </li>
         {% endfor %}
     </ul>
+    <h2>Book an Appointment</h2>
+
+    <form action="{% url 'service_list' %}" method="POST"> <!-- goes to url page and find nickname service_list, get the link which is "" so basically a / -->
+        <!-- 
+           CSRF TOKEN — required on EVERY form that uses method="POST"
+
+           THE PROBLEM IT SOLVES (Cross-Site Request Forgery):
+           - Browsers auto-attach my cookies to every request to a site,
+             no matter WHO caused that request
+           - So a malicious site can hide a form pointing at my site,
+             auto-submit it with JS, and my browser tags along my cookie
+           - Server sees a valid session and does the thing (transfer money,
+             delete account, book a fake appointment)
+
+           THE FIX:
+           - Django generates a random token, stores it in my session,
+             and hides it in the form
+           - On submit, Django compares submitted token vs stored token
+           - Match = request proceeds. Mismatch/missing = 403 Forbidden
+
+           WHY IT WORKS:
+           - Attacker's site can build the form, but can't guess the token
+           - It also can't READ the token off my page — browsers block one
+             site from reading another site's content (same-origin policy)
+           - Forge the request: yes. Forge the token: no.
+
+           MECHANICS:
+           - Renders as: <input type="hidden" name="csrfmiddlewaretoken" value="...">
+           - Checked by CSRF middleware BEFORE my view function runs
+           - So a 403 means my view never even executed
+
+           RULES:
+           - POST forms: always needed
+           - GET forms (search box): not needed — GET shouldn't change data
+           - NEVER slap @csrf_exempt on a view to kill a 403. That's not a
+             fix, that's removing the lock because the key is annoying
+           - Missing this = the #1 first-form bug. 403? Check here first.
+
+           LATER (DRF / React Native):
+           - API calls use an Authorization header token, not cookies
+           - Headers are NOT auto-attached by browsers → no CSRF risk
+           - But a React web app on Django SESSIONS = CSRF is back
+           - One-liner: CSRF is a COOKIE problem
+        -->
+        {% csrf_token %}
+
+        <label>Name:</label>
+        <input type="text" name="client_name" required>
+
+        <label>Phone:</label>
+        <input type="tel" name="client_phone" required>
+
+        <label>Email:</label>
+        <input type="email" name="client_email" required>
+
+        <label>Service:</label>
+        <select name="service_id" required>
+            {% for service in services %}
+                <option value="{{ service.id }}">
+                    {{ service.name }} — ${{ service.price }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>Date &amp; Time:</label>
+        <input type="datetime-local" name="start_time" required>
+
+        <button type="submit">Book Now</button>
+    </form>
+
 </body>
 </html>
